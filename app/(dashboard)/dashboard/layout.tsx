@@ -17,13 +17,18 @@ export default function DashboardLayout({
     useAuthStore();
 
   useEffect(() => {
+    const { user, profile, organization } = useAuthStore.getState();
+
+    if (user && profile) {
+      setLoading(false);
+      return;
+    }
+
     let cancelled = false;
     const supabase = createClient();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!session && !cancelled) {
-        router.push("/login");
-      }
+      if (!session && !cancelled) router.push("/login");
     });
 
     supabase.auth.getUser()
@@ -58,11 +63,11 @@ export default function DashboardLayout({
               .select("*")
               .eq("id", profile.org_id)
               .single();
-            if (org) setOrganization(org);
+            if (!cancelled && org) setOrganization(org);
           }
         }
 
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       })
       .catch((err) => {
         console.error("Auth check error:", err);
